@@ -15,16 +15,16 @@ const WINDOW_COLORS = [
 ];
 
 const MESSAGES = [
-  "You make every room brighter just by walking in. 🌟",
-  "I think about our conversations more than I should. 💭",
-  "You're kind of my favorite person. Don't tell anyone. 🤫",
-  "Honestly? You're really cool and I hope you know it. 🎸",
-  "I get nervous around you. In the best way. 🦋",
-  "You have really good taste. In everything. Including friends. 😌",
-  "I saved that thing you said. I still think about it. 💌",
-  "You're the rare kind of person who actually listens. 🌸",
-  "Every time I see you, I forget what I was going to say. 🫀",
-  "RARE DROP: You are genuinely one of a kind. ✨",
+  "Okay fine. I like you. Like, a lot. 😶",
+  "I replay our conversations more than I'd ever admit. 🌙",
+  "You're really hard not to fall for, just so you know. 🍂",
+  "I find reasons to think about you constantly. It's a problem. 💛",
+  "I smile before I even finish reading your messages. 🌸",
+  "Somehow you became my favorite person without even trying. 🫶",
+  "I wish I was brave enough to just tell you this in person. 💌",
+  "Every time I see you I forget everything I planned to say. 🫀",
+  "You make my heart do something really inconvenient. 🦋",
+  "RARE DROP: I think I'm falling for you. 💗",
 ];
 
 // Capsule positions in the window
