@@ -1,4 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
+// Fixed colors assigned to each window position — these never change
+const WINDOW_COLORS = [
+  { top: "#E8B4B8", bottom: "#C0717A" }, // pink
+  { top: "#6BAED6", bottom: "#2E6FA3" }, // blue
+  { top: "#74C69D", bottom: "#2D9B5A" }, // green
+  { top: "#FFA552", bottom: "#E07020" }, // orange
+  { top: "#B5A0D8", bottom: "#7B5EA7" }, // purple
+  { top: "#F7C59F", bottom: "#E09050" }, // peach
+  { top: "#E8B4B8", bottom: "#C0717A" }, // pink
+  { top: "#6BAED6", bottom: "#2E6FA3" }, // blue
+  { top: "#74C69D", bottom: "#2D9B5A" }, // green
+  { top: "#F6D365", bottom: "#FDA085" }, // gold (rare)
+];
 
 const MESSAGES = [
   "You make every room brighter just by walking in. 🌟",
@@ -13,326 +27,308 @@ const MESSAGES = [
   "RARE DROP: You are genuinely one of a kind. ✨",
 ];
 
-const CAPSULE_COLORS = [
-  { top: "#FF6B9D", bottom: "#C44569" },
-  { top: "#A8E6CF", bottom: "#3D9970" },
-  { top: "#FFD3A5", bottom: "#FD9644" },
-  { top: "#A29BFE", bottom: "#6C5CE7" },
-  { top: "#81ECEC", bottom: "#00CEC9" },
-  { top: "#FDCB6E", bottom: "#E17055" },
+// Capsule positions in the window
+const CAPSULE_POS = [
+  { cx: 48,  cy: 58, rxT: 20, ryT: 24, rxB: 20, ryB: 15 },
+  { cx: 96,  cy: 55, rxT: 21, ryT: 25, rxB: 21, ryB: 16 },
+  { cx: 146, cy: 57, rxT: 20, ryT: 24, rxB: 20, ryB: 15 },
+  { cx: 194, cy: 55, rxT: 19, ryT: 23, rxB: 19, ryB: 14 },
+  { cx: 240, cy: 58, rxT: 18, ryT: 22, rxB: 18, ryB: 14 },
+  { cx: 56,  cy: 86, rxT: 22, ryT: 17, rxB: 22, ryB: 12 },
+  { cx: 106, cy: 84, rxT: 21, ryT: 16, rxB: 21, ryB: 11 },
+  { cx: 154, cy: 86, rxT: 20, ryT: 15, rxB: 20, ryB: 10 },
+  { cx: 200, cy: 84, rxT: 19, ryT: 15, rxB: 19, ryB: 10 },
+  { cx: 244, cy: 86, rxT: 18, ryT: 14, rxB: 18, ryB: 9  },
 ];
 
-const RARE_CHANCE = 0.15;
+const TOTAL = MESSAGES.length;
 
-function CapsuleSVG({ colors, scale = 1, wobble = false }) {
-  return (
-    <svg
-      width={80 * scale}
-      height={110 * scale}
-      viewBox="0 0 80 110"
-      style={{
-        filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
-        animation: wobble ? "wobble 0.5s ease-in-out" : "none",
-      }}
-    >
-      {/* Top half */}
-      <ellipse cx="40" cy="40" rx="38" ry="40" fill={colors.top} />
-      <ellipse cx="40" cy="70" rx="38" ry="40" fill={colors.bottom} />
-      {/* Seam */}
-      <rect x="2" y="38" width="76" height="4" fill="rgba(0,0,0,0.15)" />
-      {/* Shine */}
-      <ellipse cx="28" cy="22" rx="10" ry="7" fill="rgba(255,255,255,0.35)" transform="rotate(-20,28,22)" />
-    </svg>
-  );
-}
-
-function MachineSVG({ isEjecting, hasCoin }) {
-  return (
-    <svg width="260" height="320" viewBox="0 0 260 320" style={{ filter: "drop-shadow(0 12px 30px rgba(0,0,0,0.15))" }}>
-      {/* Body */}
-      <rect x="20" y="80" width="220" height="200" rx="16" fill="#F5F0E8" stroke="#D4C5A9" strokeWidth="2" />
-      {/* Top dome */}
-      <rect x="30" y="10" width="200" height="90" rx="14" fill="#FAFAFA" stroke="#D4C5A9" strokeWidth="2" />
-      {/* Red top stripe */}
-      <rect x="20" y="10" width="220" height="18" rx="10" fill="#E74C3C" />
-      <rect x="20" y="20" width="220" height="8" fill="#E74C3C" />
-      {/* Red bottom stripe */}
-      <rect x="20" y="260" width="220" height="20" rx="8" fill="#E74C3C" />
-      {/* Capsule display window */}
-      <rect x="40" y="25" width="180" height="62" rx="8" fill="#E8F4FD" stroke="#BFD7EA" strokeWidth="1.5" />
-      {/* Capsules inside window - decorative */}
-      <ellipse cx="75" cy="56" rx="22" ry="26" fill="#FF6B9D" opacity="0.9" />
-      <ellipse cx="75" cy="68" rx="22" ry="16" fill="#C44569" opacity="0.9" />
-      <ellipse cx="118" cy="52" rx="20" ry="23" fill="#A29BFE" opacity="0.9" />
-      <ellipse cx="118" cy="64" rx="20" ry="14" fill="#6C5CE7" opacity="0.9" />
-      <ellipse cx="158" cy="56" rx="18" ry="22" fill="#FDCB6E" opacity="0.9" />
-      <ellipse cx="158" cy="67" rx="18" ry="13" fill="#E17055" opacity="0.9" />
-      {/* Price tag */}
-      <rect x="38" y="96" width="68" height="26" rx="6" fill="#FFF" stroke="#D4C5A9" strokeWidth="1" />
-      <text x="72" y="108" textAnchor="middle" fontSize="8" fill="#999" fontFamily="serif">各</text>
-      <text x="72" y="118" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#E74C3C" fontFamily="sans-serif">¥200</text>
-      {/* Coin slot label */}
-      <rect x="116" y="96" width="80" height="18" rx="5" fill="#3498DB" />
-      <text x="156" y="109" textAnchor="middle" fontSize="8" fill="#FFF" fontFamily="sans-serif">コイン投入口 ▼</text>
-      {/* Coin slot */}
-      <rect x="148" y="117" width="28" height="6" rx="3" fill="#2C3E50" />
-      {/* Coin flash */}
-      {hasCoin && (
-        <ellipse cx="162" cy="120" rx="10" ry="4" fill="#F1C40F" opacity="0.9">
-          <animate attributeName="opacity" values="0.9;0.2;0.9" dur="0.3s" repeatCount="3" />
-        </ellipse>
-      )}
-      {/* Turn handle label */}
-      <text x="46" y="158" fontSize="7" fill="#666" fontFamily="sans-serif">▶ ハンドルをゆっくり</text>
-      <text x="46" y="168" fontSize="7" fill="#666" fontFamily="sans-serif">　1回まわしてください。</text>
-      {/* Main dial/handle area */}
-      <circle cx="155" cy="175" r="42" fill="#FFF" stroke="#D4C5A9" strokeWidth="2" />
-      <circle cx="155" cy="175" r="38" fill="#3498DB" opacity="0.15" />
-      <circle cx="155" cy="175" r="34" fill="#FFF" stroke="#BFD7EA" strokeWidth="1.5" />
-      {/* Handle knob */}
-      <circle cx="155" cy="145" r="10" fill="#E74C3C" stroke="#C0392B" strokeWidth="1.5" />
-      <circle cx="155" cy="145" r="5" fill="#C0392B" />
-      {/* Capsule exit chute */}
-      <rect x="115" y="220" width="80" height="48" rx="8" fill="#DDD" stroke="#C5C5C5" strokeWidth="1.5" />
-      <rect x="120" y="230" width="70" height="32" rx="6" fill="#CCC" />
-      {/* Ejected capsule animation */}
-      {isEjecting && (
-        <g>
-          <ellipse cx="155" cy="236" rx="16" ry="18" fill="#A8E6CF">
-            <animate attributeName="cy" from="200" to="236" dur="0.4s" fill="freeze" />
-          </ellipse>
-          <ellipse cx="155" cy="248" rx="16" ry="12" fill="#3D9970">
-            <animate attributeName="cy" from="212" to="248" dur="0.4s" fill="freeze" />
-          </ellipse>
-        </g>
-      )}
-      {/* Feet */}
-      <rect x="40" y="278" width="28" height="12" rx="4" fill="#C0392B" />
-      <rect x="192" y="278" width="28" height="12" rx="4" fill="#C0392B" />
-    </svg>
-  );
+// Shuffle just the order of pulls (indices 0-9), not the colors
+function shuffleIndices() {
+  const a = [...Array(TOTAL).keys()];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 export default function GachaMessage() {
-  const [step, setStep] = useState("idle"); // idle | coined | turning | ejecting | opening | revealed
-  const [capsuleColor, setCapsuleColor] = useState(CAPSULE_COLORS[0]);
-  const [message, setMessage] = useState("");
-  const [isRare, setIsRare] = useState(false);
-  const [handleRotation, setHandleRotation] = useState(0);
-  const [count, setCount] = useState(0);
+  // pullOrder[0] = which window position gets pulled first, etc.
+  const [pullOrder] = useState(() => shuffleIndices());
+  const [pulled,  setPulled]  = useState(0); // how many pulled so far
+  const [step,    setStep]    = useState("ready");
+  const [angle,   setAngle]   = useState(0);
+  const [current, setCurrent] = useState(null); // { color, msg, rare }
+  const [inTray,  setInTray]  = useState(false);
+  const [opened,  setOpened]  = useState(false);
 
-  const insertCoin = () => {
-    if (step !== "idle") return;
-    setStep("coined");
-  };
+  const remaining = TOTAL - pulled;
 
-  const turnHandle = () => {
-    if (step !== "coined") return;
+  const onTurn = () => {
+    if (step !== "ready" || remaining === 0) return;
+    // The next capsule to pull is pullOrder[pulled]
+    const winIdx = pullOrder[pulled];
+    const color = WINDOW_COLORS[winIdx];
+    const msg   = MESSAGES[winIdx];
+    const rare  = winIdx === 9;
+    setCurrent({ color, msg, rare, winIdx });
     setStep("turning");
-    setHandleRotation(360);
-
-    const rare = Math.random() < RARE_CHANCE;
-    const color = CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)];
-    const msg = rare
-      ? MESSAGES[9]
-      : MESSAGES[Math.floor(Math.random() * (MESSAGES.length - 1))];
-
-    setCapsuleColor(color);
-    setIsRare(rare);
-    setMessage(msg);
-
-    setTimeout(() => setStep("ejecting"), 700);
-    setTimeout(() => setStep("opening"), 1400);
+    setAngle(a => a + 360);
+    setTimeout(() => { setInTray(true); setStep("dropped"); }, 820);
   };
 
-  const openCapsule = () => {
-    if (step !== "opening") return;
-    setCount((c) => c + 1);
-    setStep("revealed");
+  const onCapsule = () => {
+    if (step !== "dropped") return;
+    setOpened(true);
+    setTimeout(() => { setPulled(p => p + 1); setStep("revealed"); }, 380);
   };
 
-  const reset = () => {
-    setStep("idle");
-    setHandleRotation(0);
+  const onNext = () => {
+    setInTray(false); setOpened(false); setCurrent(null);
+    setStep(remaining - 1 === 0 ? "empty" : "ready");
   };
+
+  const col = current?.color || WINDOW_COLORS[0];
+
+  // Which window positions are still visible (haven't been pulled yet)
+  const pulledIndices = new Set(pullOrder.slice(0, pulled));
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #FFF5F7 0%, #F0F4FF 50%, #FFF8F0 100%)",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
+      background: "#D8D4CF",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
       fontFamily: "'Georgia', serif",
-      padding: "20px",
-      position: "relative",
-      overflow: "hidden",
+      padding: "12px",
     }}>
-      {/* Decorative dots */}
-      {[...Array(12)].map((_, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          width: 8, height: 8,
-          borderRadius: "50%",
-          background: ["#FFB3C6","#A8D8EA","#FFE0AC","#C3B1E1"][i % 4],
-          top: `${10 + (i * 7.5) % 85}%`,
-          left: `${5 + (i * 11) % 90}%`,
-          opacity: 0.5,
-        }} />
-      ))}
 
       {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 11, letterSpacing: 4, color: "#E74C3C", textTransform: "uppercase", marginBottom: 4 }}>
+      <div style={{ textAlign: "center", marginBottom: 4 }}>
+        <div style={{ fontSize: 9, letterSpacing: 5, color: "#B03020", textTransform: "uppercase", marginBottom: 2 }}>
           GACHA MESSAGE
         </div>
-        <h1 style={{ fontSize: 28, fontWeight: "bold", color: "#2C2C2C", margin: 0, letterSpacing: -0.5 }}>
+        <h1 style={{ fontSize: 27, fontWeight: "900", color: "#111", margin: "0 0 2px" }}>
           Secret message
         </h1>
-        {count > 0 && (
-          <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
-            {count} capsule{count > 1 ? "s" : ""} collected
-          </div>
-        )}
+        <div style={{ fontSize: 11, color: "#888" }}>
+          {remaining > 0 ? `${remaining} remaining` : "All collected!"}
+        </div>
       </div>
 
-      {/* Machine */}
-      <div style={{ position: "relative", marginBottom: 16 }}>
-        <div style={{
-          transform: step === "turning" ? `rotate(${handleRotation}deg)` : "rotate(0deg)",
-          transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-          transformOrigin: "center center",
-          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-        }} />
-        <MachineSVG isEjecting={step === "ejecting" || step === "opening"} hasCoin={step === "coined"} />
+      {/* Hint */}
+      <div style={{ fontSize: 11, color: "#777", marginBottom: 4, minHeight: 17, fontStyle: "italic" }}>
+        {step === "ready"   && remaining > 0 && "Click the handle to turn!"}
+        {step === "turning" && "Turning…"}
+        {step === "dropped" && "Click the capsule to open!"}
       </div>
 
-      {/* Action area */}
-      {step === "idle" && (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ color: "#666", fontSize: 14, marginBottom: 12 }}>
-            Insert a coin to receive a secret message 💌
-          </p>
-          <button onClick={insertCoin} style={btnStyle("#E74C3C")}>
-            🪙 Insert ¥200
-          </button>
-        </div>
-      )}
+      {/* ══════════ MACHINE ══════════ */}
+      <svg width="300" height="380" viewBox="0 0 300 380"
+        style={{ filter: "drop-shadow(0 10px 28px rgba(0,0,0,0.22))", overflow: "visible" }}>
 
-      {step === "coined" && (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ color: "#3498DB", fontSize: 14, marginBottom: 12 }}>
-            Now turn the handle slowly! 🎰
-          </p>
-          <button onClick={turnHandle} style={btnStyle("#3498DB")}>
-            🔄 Turn Handle
-          </button>
-        </div>
-      )}
+        {/* Red top cap */}
+        <rect x="10" y="4"  width="280" height="26" rx="13" fill="#CC3322"/>
+        <rect x="10" y="16" width="280" height="14"          fill="#CC3322"/>
 
-      {step === "turning" && (
-        <div style={{ textAlign: "center", color: "#999", fontSize: 14 }}>
-          ⚙️ Turning...
-        </div>
-      )}
+        {/* White dome */}
+        <rect x="10" y="12" width="280" height="130" rx="12" fill="#F8F6F2" stroke="#E0D8CC" strokeWidth="2"/>
+        {/* Glass window */}
+        <rect x="20" y="20" width="260" height="115" rx="8" fill="#EDE8E0" stroke="#D0C8BC" strokeWidth="1.5"/>
 
-      {step === "ejecting" && (
-        <div style={{ textAlign: "center", color: "#999", fontSize: 14 }}>
-          🎊 A capsule appeared!
-        </div>
-      )}
 
-      {step === "opening" && (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ color: "#E17055", fontSize: 14, marginBottom: 12 }}>
-            You got a capsule! Open it? 🫧
-          </p>
-          <button onClick={openCapsule} style={btnStyle("#E17055")}>
-            ✨ Open Capsule!
-          </button>
-        </div>
-      )}
 
-      {step === "revealed" && (
-        <div style={{
-          background: "#FFF",
-          borderRadius: 20,
-          padding: "24px 28px",
-          maxWidth: 300,
-          textAlign: "center",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          border: `2px solid ${capsuleColor.top}`,
-          position: "relative",
-          animation: "popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}>
-          <div style={{ marginBottom: 12 }}>
-            <CapsuleSVG colors={capsuleColor} scale={0.7} wobble />
-          </div>
-          {isRare && (
-            <div style={{
-              background: "linear-gradient(135deg, #F6D365, #FDA085)",
-              color: "#FFF",
-              fontSize: 11,
-              fontWeight: "bold",
-              letterSpacing: 2,
-              padding: "3px 10px",
-              borderRadius: 20,
-              display: "inline-block",
-              marginBottom: 10,
+        {/* ── CAPSULES — each has a fixed color matching WINDOW_COLORS[i] ── */}
+        {CAPSULE_POS.map((p, i) => {
+          const c = WINDOW_COLORS[i];
+          const visible = !pulledIndices.has(i);
+          // also hide the one currently being pulled (current.winIdx) once tray shows
+          const hideCurrent = inTray && current && current.winIdx === i;
+          return (
+            <g key={i} style={{
+              opacity: visible && !hideCurrent ? 1 : 0,
+              transition: "opacity 0.45s ease",
+              pointerEvents: "none",
             }}>
-              ★ RARE DROP ★
-            </div>
+              <ellipse cx={p.cx} cy={p.cy}                  rx={p.rxT} ry={p.ryT} fill={c.top}/>
+              <ellipse cx={p.cx} cy={p.cy + p.ryT * 0.55}  rx={p.rxB} ry={p.ryB} fill={c.bottom}/>
+              <rect    x={p.cx - p.rxT} y={p.cy - 2}        width={p.rxT * 2} height={3} fill="rgba(0,0,0,0.09)"/>
+              <ellipse cx={p.cx - p.rxT * 0.28} cy={p.cy - p.ryT * 0.4}
+                rx={p.rxT * 0.28} ry={p.ryT * 0.18}
+                fill="rgba(255,255,255,0.44)"
+                transform={`rotate(-18,${p.cx - p.rxT * 0.28},${p.cy - p.ryT * 0.4})`}/>
+            </g>
+          );
+        })}
+
+        {/* window top glare */}
+        <rect x="20" y="20" width="260" height="14" rx="8" fill="rgba(255,255,255,0.48)"/>
+
+        {/* ── LOWER BODY ── */}
+        <rect x="10" y="134" width="280" height="210" rx="12" fill="#F8F6F2" stroke="#E0D8CC" strokeWidth="2"/>
+        <rect x="10" y="318" width="280" height="24" rx="10" fill="#CC3322"/>
+
+        {/* Labels */}
+        <rect x="18" y="143" width="66" height="28" rx="6" fill="#FFF" stroke="#DDD" strokeWidth="1.5"/>
+        <text x="51" y="154" textAnchor="middle" fontSize="6.5" fill="#bbb" fontFamily="sans-serif">各</text>
+        <text x="51" y="166" textAnchor="middle" fontSize="13" fontWeight="900" fill="#CC3322" fontFamily="sans-serif">200円</text>
+
+        <rect x="90" y="143" width="52" height="28" rx="6" fill="#D63384"/>
+        <text x="116" y="154" textAnchor="middle" fontSize="7" fill="#FFF" fontFamily="sans-serif">100円玉</text>
+        <text x="116" y="165" textAnchor="middle" fontSize="7" fill="#FFF" fontFamily="sans-serif">専用</text>
+
+        <rect x="148" y="143" width="78" height="20" rx="5" fill="#FFF" stroke="#DDD" strokeWidth="1"/>
+        <text x="187" y="157" textAnchor="middle" fontSize="8" fill="#444" fontFamily="sans-serif">コイン投入口▼</text>
+
+        <rect x="234" y="143" width="52" height="36" rx="7" fill="#3498DB"/>
+        <text x="260" y="156" textAnchor="middle" fontSize="6.5" fill="#FFF" fontFamily="sans-serif">コイン返却</text>
+        <text x="260" y="167" textAnchor="middle" fontSize="6.5" fill="#FFF" fontFamily="sans-serif">ボタン</text>
+        <circle cx="260" cy="175" r="5" fill="#2471A3"/>
+
+        <rect x="18" y="178" width="112" height="32" rx="6" fill="#FFF" stroke="#EEE" strokeWidth="1"/>
+        <text x="26" y="191" fontSize="7.5" fill="#555" fontFamily="sans-serif">▶ ハンドルをゆっくり</text>
+        <text x="26" y="204" fontSize="7.5" fill="#555" fontFamily="sans-serif">　1回まわしてください。</text>
+
+        {/* ── HANDLE DIAL ── */}
+        <g onClick={onTurn} style={{ cursor: step === "ready" && remaining > 0 ? "pointer" : "default" }}>
+          {step === "ready" && remaining > 0 && (
+            <circle cx="144" cy="248" r="56" fill="none" stroke="#3498DB" strokeWidth="2" opacity="0.3">
+              <animate attributeName="r" values="50;62;50" dur="1.3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.35;0;0.35" dur="1.3s" repeatCount="indefinite"/>
+            </circle>
           )}
-          <p style={{
-            fontSize: 16,
-            color: "#2C2C2C",
-            lineHeight: 1.6,
-            fontStyle: "italic",
-            margin: "0 0 16px",
+          <circle cx="144" cy="248" r="50" fill="#FFF"
+            stroke={step === "ready" && remaining > 0 ? "#2980B9" : "#CCC"} strokeWidth="4"/>
+          <circle cx="144" cy="248" r="45"
+            fill={step === "ready" && remaining > 0 ? "#D6EAF8" : "#F0F0F0"}
+            stroke={step === "ready" && remaining > 0 ? "#AED6F1" : "#DDD"} strokeWidth="1.5"/>
+          {[...Array(10)].map((_, i) => {
+            const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+            return <circle key={i}
+              cx={144 + Math.cos(a) * 39} cy={248 + Math.sin(a) * 39}
+              r="2.5" fill={step === "ready" && remaining > 0 ? "#E6AC00" : "#CCC"}/>;
+          })}
+          <circle cx="144" cy="248" r="32" fill="#FFF" stroke="#E8E0D8" strokeWidth="1.5"/>
+          <line x1="112" y1="248" x2="176" y2="248" stroke="#EDE8E0" strokeWidth="2.5"/>
+          <line x1="144" y1="216" x2="144" y2="280" stroke="#EDE8E0" strokeWidth="2.5"/>
+          <line x1="121" y1="225" x2="167" y2="271" stroke="#EDE8E0" strokeWidth="1.5"/>
+          <line x1="167" y1="225" x2="121" y2="271" stroke="#EDE8E0" strokeWidth="1.5"/>
+          <g style={{
+            transformOrigin: "144px 248px",
+            transform: `rotate(${angle}deg)`,
+            transition: "transform 0.78s cubic-bezier(0.4,0,0.2,1)",
           }}>
-            "{message}"
+            <line x1="144" y1="248" x2="144" y2="210"
+              stroke={step === "ready" && remaining > 0 ? "#2471A3" : "#BBB"}
+              strokeWidth="4.5" strokeLinecap="round"/>
+            <circle cx="144" cy="207" r="12"
+              fill={step === "ready" && remaining > 0 ? "#E74C3C" : "#BBB"}
+              stroke={step === "ready" && remaining > 0 ? "#C0392B" : "#999"} strokeWidth="2"/>
+            <circle cx="144" cy="207" r="6.5"
+              fill={step === "ready" && remaining > 0 ? "#C0392B" : "#999"}/>
+          </g>
+        </g>
+
+        <circle cx="236" cy="248" r="14" fill="#FFF" stroke="#D8D0C4" strokeWidth="1.5"/>
+        <circle cx="236" cy="248" r="8"  fill="#EDE8E0" stroke="#CCC" strokeWidth="1"/>
+
+        {/* ── TRAY ── */}
+        <rect x="192" y="200" width="96" height="112" rx="9" fill="#D0C8BC" stroke="#B8B0A4" strokeWidth="2"/>
+        <rect x="200" y="234" width="80" height="72"  rx="6" fill="#C0B8AC"/>
+        <rect x="210" y="200" width="60" height="16" rx="5" fill="#B0A89C"/>
+        <rect x="216" y="206" width="48" height="8"  rx="3" fill="#A09890"/>
+
+        {/* ── CAPSULE IN TRAY — same color as the one removed from window ── */}
+        {inTray && (
+          <g onClick={onCapsule} style={{ cursor: step === "dropped" ? "pointer" : "default" }}>
+            <ellipse cx="240" cy="256" rx="28" ry="32"
+              fill={opened ? "rgba(200,198,195,0.4)" : col.top}
+              style={{ transition: "fill 0.35s" }}/>
+            <ellipse cx="240" cy="278" rx="28" ry="20"
+              fill={opened ? "rgba(200,198,195,0.4)" : col.bottom}
+              style={{ transition: "fill 0.35s" }}/>
+            <rect x="212" y="254" width="56" height="4" fill="rgba(0,0,0,0.09)"/>
+            <ellipse cx="228" cy="243" rx="9" ry="6" fill="rgba(255,255,255,0.52)"
+              transform="rotate(-20,228,243)"/>
+            {step === "dropped" && !opened && (
+              <ellipse cx="240" cy="265" rx="30" ry="34" fill="none" stroke="#FFF" strokeWidth="2.5" opacity="0.8">
+                <animate attributeName="opacity" values="0.8;0.1;0.8" dur="0.9s" repeatCount="indefinite"/>
+              </ellipse>
+            )}
+          </g>
+        )}
+
+        {/* 対象年齢 */}
+        <rect x="18" y="270" width="54" height="30" rx="6" fill="#2980B9"/>
+        <text x="45" y="283" textAnchor="middle" fontSize="7.5" fill="#FFF" fontFamily="sans-serif">対象年齢</text>
+        <text x="45" y="294" textAnchor="middle" fontSize="7.5" fill="#FFF" fontFamily="sans-serif">6才以上</text>
+
+        {/* Feet */}
+        <rect x="28" y="340" width="38" height="16" rx="7" fill="#A02820"/>
+        <rect x="234" y="340" width="38" height="16" rx="7" fill="#A02820"/>
+      </svg>
+
+      {/* MESSAGE CARD */}
+      {step === "revealed" && current && (
+        <div style={{
+          marginTop: 10, background: "#FFF", borderRadius: 18,
+          padding: "18px 24px", maxWidth: 290, width: "90%",
+          textAlign: "center",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.14)",
+          border: `2.5px solid ${col.top}`,
+          animation: "popIn 0.42s cubic-bezier(0.34,1.56,0.64,1)",
+        }}>
+          {current.rare && (
+            <div style={{
+              background: "linear-gradient(135deg,#F6D365,#FDA085)",
+              color: "#FFF", fontSize: 10, fontWeight: "bold",
+              letterSpacing: 2, padding: "3px 12px", borderRadius: 20,
+              display: "inline-block", marginBottom: 8,
+            }}>★ RARE DROP ★</div>
+          )}
+          <p style={{ fontSize: 16, color: "#111", lineHeight: 1.72, fontStyle: "italic", margin: "0 0 14px" }}>
+            "{current.msg}"
           </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button onClick={reset} style={btnStyle(capsuleColor.bottom, true)}>
-              🎰 Play again
-            </button>
-          </div>
+          {remaining - 1 > 0
+            ? <button onClick={onNext} style={btn(col.bottom)}>🎰 Pull again ({remaining - 1} left)</button>
+            : <button onClick={onNext} style={btn("#888")}>Last one! 🎉</button>
+          }
+        </div>
+      )}
+
+      {step === "empty" && (
+        <div style={{
+          marginTop: 10, background: "#FFF", borderRadius: 18,
+          padding: "18px 24px", maxWidth: 290, width: "90%",
+          textAlign: "center", boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          border: "2px solid #FDCB6E",
+          animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+        }}>
+          <div style={{ fontSize: 30, marginBottom: 6 }}>🎊</div>
+          <p style={{ fontSize: 15, color: "#333", margin: "0 0 4px" }}>All {TOTAL} messages collected!</p>
+          <p style={{ fontSize: 12, color: "#aaa", fontStyle: "italic" }}>Hope at least one made you smile 🌸</p>
         </div>
       )}
 
       <style>{`
         @keyframes popIn {
-          from { transform: scale(0.7); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
+          from { transform: scale(0.65) translateY(6px); opacity: 0; }
+          to   { transform: scale(1)    translateY(0);   opacity: 1; }
         }
-        @keyframes wobble {
-          0%,100% { transform: rotate(0deg); }
-          25% { transform: rotate(-8deg); }
-          75% { transform: rotate(8deg); }
-        }
-        button:hover { opacity: 0.88; transform: translateY(-1px); }
+        button:hover  { opacity: 0.84; transform: translateY(-2px); }
         button:active { transform: translateY(1px); }
       `}</style>
     </div>
   );
 }
 
-function btnStyle(color, small = false) {
+function btn(color) {
   return {
-    background: color,
-    color: "#FFF",
-    border: "none",
-    borderRadius: 50,
-    padding: small ? "10px 20px" : "12px 28px",
-    fontSize: small ? 13 : 15,
-    fontWeight: "bold",
-    cursor: "pointer",
-    letterSpacing: 0.5,
+    background: color, color: "#FFF", border: "none",
+    borderRadius: 50, padding: "10px 24px", fontSize: 13,
+    fontWeight: "bold", cursor: "pointer", letterSpacing: 0.4,
     boxShadow: `0 4px 14px ${color}55`,
-    transition: "all 0.15s ease",
-    fontFamily: "Georgia, serif",
+    transition: "all 0.15s ease", fontFamily: "Georgia, serif",
   };
 }
